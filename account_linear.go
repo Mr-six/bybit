@@ -185,8 +185,8 @@ type CancelLinearOrder struct {
 	OrderID string `json:"order_id"`
 }
 
-// CancelLinearOrderParam :
-type CancelLinearOrderParam struct {
+// QueryLinearOrderParam :
+type QueryLinearOrderParam struct {
 	Symbol SymbolUSDT `json:"symbol"`
 
 	OrderID     *string `json:"order_id,omitempty"`
@@ -194,7 +194,7 @@ type CancelLinearOrderParam struct {
 }
 
 // CancelLinearOrder :
-func (s *AccountService) CancelLinearOrder(param CancelLinearOrderParam) (*CancelLinearOrderResponse, error) {
+func (s *AccountService) CancelLinearOrder(param QueryLinearOrderParam) (*CancelLinearOrderResponse, error) {
 	var res CancelLinearOrderResponse
 
 	if param.OrderID == nil && param.OrderLinkID == nil {
@@ -208,7 +208,7 @@ func (s *AccountService) CancelLinearOrder(param CancelLinearOrderParam) (*Cance
 
 	jsonBody, err := json.Marshal(param)
 	if err != nil {
-		return nil, fmt.Errorf("json marshal for CancelLinearOrderParam: %w", err)
+		return nil, fmt.Errorf("json marshal for QueryLinearOrderParam: %w", err)
 	}
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
 	if err != nil {
@@ -316,6 +316,196 @@ func (s *AccountService) LinearExecutionList(param LinearExecutionListParam) (*L
 		return nil, fmt.Errorf("json marshal for LinearExecutionListParam: %w", err)
 	}
 	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// LinearOrderListResponse (Get Active Orders) :
+type LinearOrderListResponse struct {
+	CommonResponse `json:",inline"`
+	Result         LinearOrderListResult `json:"result"`
+}
+
+// LinearOrderListResult :
+type LinearOrderListResult struct {
+	CurrentPage     int                 `json:"current_page"`
+	LinearOrderList []CreateLinearOrder `json:"data"`
+}
+
+// LinearExecutionListParam :
+type LinearOrderListParam struct {
+	Symbol      SymbolUSDT `json:"symbol"`
+	OrderID     *string    `json:"order_id,omitempty"`
+	OrderLinkID *string    `json:"order_link_id,omitempty"`
+	Order       *string    `json:"order,omitempty"`
+	Page        *int       `json:"page,omitempty"`
+	Limit       *int       `json:"limit,omitempty"`
+	OrderStatus string     `json:"order_status,omitempty"`
+}
+
+// LinearOrderList :
+func (s *AccountService) LinearOrderList(param LinearOrderListParam) (*LinearOrderListResponse, error) {
+	var res LinearOrderListResponse
+
+	url, err := s.Client.BuildPrivateURL("/private/linear/order/list", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonBody, err := json.Marshal(param)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal for LinearOrderListParam: %w", err)
+	}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// CancelAllLinearOrderResponse :
+type CancelAllLinearOrderResponse struct {
+	CommonResponse `json:",inline"`
+	Result         []string `json:"result"`
+}
+
+// CancelAllLinearOrderParam :
+type CancelAllLinearOrderParam struct {
+	Symbol SymbolUSDT `json:"symbol"`
+}
+
+// CancelAllLinearOrder :
+func (s *AccountService) CancelAllLinearOrder(param CancelAllLinearOrderParam) (*CancelAllLinearOrderResponse, error) {
+	var res CancelAllLinearOrderResponse
+
+	url, err := s.Client.BuildPrivateURL("/private/linear/order/cancel-all", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonBody, err := json.Marshal(param)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal for CancelAllLinearOrderParam: %w", err)
+	}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// LinearOrderReplaceResponse :
+type LinearOrderReplaceResponse struct {
+	CancelLinearOrderResponse
+}
+
+// LinearOrderReplaceParam :
+type LinearOrderReplaceParam struct {
+	Symbol                 SymbolUSDT `json:"symbol"`
+	OrderID                *string    `json:"order_id,omitempty"`
+	OrderLinkID            *string    `json:"order_link_id,omitempty"`
+	Amount                 *float64   `json:"p_r_qty,omitempty"`
+	Price                  *float64   `json:"p_r_price,omitempty"`
+	TakeProfitPrice        *float64   `json:"take_profit,omitempty"`
+	StopLossPrice          *float64   `json:"stop_loss,omitempty"`
+	TakeProfitTriggerPrice *float64   `json:"tp_trigger_by,omitempty"`
+	StopLossTriggerPrice   *float64   `json:"sl_trigger_by,omitempty"`
+}
+
+// LinearOrderReplace :
+func (s *AccountService) LinearOrderReplace(param LinearOrderReplaceParam) (*LinearOrderReplaceResponse, error) {
+	var res LinearOrderReplaceResponse
+
+	url, err := s.Client.BuildPrivateURL("/private/linear/order/replace", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	jsonBody, err := json.Marshal(param)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal for LinearOrderReplaceParam: %w", err)
+	}
+	resp, err := http.Post(url, "application/json", bytes.NewBuffer(jsonBody))
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// LinearOrderSearchResponse :
+type LinearOrderSearchResponse struct {
+	ListLinearPositionsResponse
+}
+
+// LinearOrderSearch (real-time) :
+func (s *AccountService) LinearOrderSearch(param QueryLinearOrderParam) (*LinearOrderSearchResponse, error) {
+	var res LinearOrderSearchResponse
+
+	if param.OrderID != nil || param.OrderLinkID != nil {
+		return nil, fmt.Errorf("use 'LinearOrderSearchBy' if search only one Order")
+	}
+	var p map[string]string
+	jsonBody, err := json.Marshal(param)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal for QueryLinearOrderParam: %w", err)
+	}
+	json.Unmarshal(jsonBody, &p)
+
+	url, err := s.Client.BuildPrivateURL("/private/linear/order/search", p)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer resp.Body.Close()
+	if err := json.NewDecoder(resp.Body).Decode(&res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+// LinearOrderSearchBy (real-time) :
+// search one order by order_id or client id
+func (s *AccountService) LinearOrderSearchBy(param QueryLinearOrderParam) (*CreateLinearOrderResponse, error) {
+	var res CreateLinearOrderResponse
+
+	if param.OrderID == nil && param.OrderLinkID == nil {
+		return nil, fmt.Errorf("either OrderID or OrderLinkID needed")
+	}
+	var p map[string]string
+	jsonBody, err := json.Marshal(param)
+	if err != nil {
+		return nil, fmt.Errorf("json marshal for QueryLinearOrderParam: %w", err)
+	}
+	json.Unmarshal(jsonBody, &p)
+
+	url, err := s.Client.BuildPrivateURL("/private/linear/order/search", p)
+	if err != nil {
+		return nil, err
+	}
+
+	resp, err := http.Get(url)
 	if err != nil {
 		return nil, err
 	}
